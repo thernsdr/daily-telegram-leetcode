@@ -1,13 +1,14 @@
 import datetime
 import time
+from os import getenv
 
 import pytz
-from scheduler import Scheduler
 import requests
+from dotenv import load_dotenv
+from scheduler import Scheduler
+
 from leetcode_api import get_daily_challenge
 from models import DailyCodingChallenge
-from os import getenv
-from dotenv import load_dotenv
 
 load_dotenv()
 
