@@ -51,7 +51,7 @@ def get_daily_challenge() -> Challenge:
                              headers=headers)
 
     try:
-        daily_records = DailyCodingQuestionRecords(data=response.json())
+        daily_records = DailyCodingQuestionRecords(data=response.json()["data"])
     except (HTTPError,
             JSONDecodeError,
             InvalidJSONError) as e:
