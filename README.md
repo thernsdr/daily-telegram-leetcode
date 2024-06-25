@@ -2,6 +2,6 @@
 
 ## Daily LeetCode Challenge in your Telegram chat
 
-### Description
+### Local run
 
-There is nothing here yet
+`docker-compose up --build`
