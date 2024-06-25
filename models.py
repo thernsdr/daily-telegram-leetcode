@@ -1,12 +1,29 @@
-class Question:
-    def __init__(self, title, title_slug, difficulty):
-        self.title: str = title
-        self.title_slug: str = title_slug
-        self.difficulty: str = difficulty
+from pydantic import BaseModel
 
 
-class DailyCodingChallenge:
-    def __init__(self, date, link, question):
-        self.date: str = date
-        self.link: str = link if link[-1] != "/" else link[:-1]
-        self.question: Question = question
+class Question(BaseModel):
+    title: str
+    titleSlug: str
+    difficulty: str
+
+
+class Challenge(BaseModel):
+    date: str
+    link: str
+    question: Question
+
+    def __post_model_init__(self,
+                            __context):
+        self.link = self.link[:-1] if self.link[-1] == "/" else self.link
+
+
+class DailyCodingChallengeV2(BaseModel):
+    challenges: list[Challenge]
+
+
+class Data(BaseModel):
+    dailyCodingChallengeV2: DailyCodingChallengeV2
+
+
+class DailyCodingQuestionRecords(BaseModel):
+    data: Data

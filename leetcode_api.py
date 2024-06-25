@@ -1,13 +1,17 @@
 from datetime import datetime
 
 import requests
+from pydantic import ValidationError
+from requests.exceptions import (HTTPError,
+                                 JSONDecodeError,
+                                 InvalidJSONError)
 
-from models import Question, DailyCodingChallenge
+from config import config
+from models import (Challenge,
+                    DailyCodingQuestionRecords)
 
-API_URL = "https://leetcode.com/graphql/"
 
-
-def get_daily_challenge() -> DailyCodingChallenge:
+def get_daily_challenge() -> Challenge:
     year = datetime.now().year
     month = datetime.now().month
 
@@ -42,21 +46,19 @@ def get_daily_challenge() -> DailyCodingChallenge:
         "variables": variables
     }
 
-    response = requests.post(API_URL, json=payload, headers=headers)
-    data = response.json()
+    response = requests.post(config.API_URL,
+                             json=payload,
+                             headers=headers)
 
-    challenge = data["data"]["dailyCodingChallengeV2"]["challenges"][-1]
+    try:
+        daily_records = DailyCodingQuestionRecords(data=response.json())
+    except (HTTPError,
+            JSONDecodeError,
+            InvalidJSONError) as e:
+        raise e
+    except ValidationError as e:
+        raise e
 
-    question = Question(
-        title=challenge["question"]["title"],
-        title_slug=challenge["question"]["titleSlug"],
-        difficulty=challenge["question"]["difficulty"]
-    )
+    challenge = daily_records.data.dailyCodingChallengeV2.challenges[-1]
 
-    daily_challenge = DailyCodingChallenge(
-        date=challenge["date"],
-        link=challenge["link"],
-        question=question
-    )
-
-    return daily_challenge
+    return challenge

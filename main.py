@@ -1,23 +1,16 @@
 import datetime
 import time
-from os import getenv
 
 import pytz
-import requests
-from dotenv import load_dotenv
+import telebot
 from scheduler import Scheduler
 
+from config import config
 from leetcode_api import get_daily_challenge
-from models import DailyCodingChallenge
-
-load_dotenv()
-
-TELEGRAM_BOT_TOKEN = getenv("TELEGRAM_BOT_TOKEN")
-CHAT_ID = int(getenv("CHAT_ID"))
-TIMEZONE = getenv("TIMEZONE")
+from models import Challenge
 
 
-def get_message_text(challenge: DailyCodingChallenge) -> str:
+def get_message_text(challenge: Challenge) -> str:
     message_elements = [
         f"<b>New LeetCode Daily Challenge!</b>",
         f"",
@@ -30,26 +23,31 @@ def get_message_text(challenge: DailyCodingChallenge) -> str:
 
 
 def daily_task() -> None:
+    bot = telebot.TeleBot(config.TELEGRAM_BOT_TOKEN.get_secret_value(),
+                          parse_mode="HTML",
+                          disable_web_page_preview=True)
+
     today_challenge = get_daily_challenge()
 
     message_text = get_message_text(today_challenge)
 
-    requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-                  json={
-                      "chat_id": CHAT_ID,
-                      "text": message_text,
-                      "parse_mode": "HTML",
-                      "link_preview_options": {
-                          "is_disabled": True
-                      }
-                  })
+    bot.send_message(chat_id=config.CHAT_ID,
+                     text=message_text)
 
 
 if __name__ == "__main__":
-    schedule = Scheduler()
+    schedule = Scheduler(tzinfo=datetime.timezone.utc)
+    config_timezone = pytz.timezone(config.TIMEZONE)
 
-    schedule.daily(datetime.time(hour=8, minute=30, tzinfo=pytz.timezone(TIMEZONE)),
+    schedule.daily(datetime.time(hour=8,
+                                 minute=30,
+                                 tzinfo=config_timezone),
                    daily_task)
+
+    start_time = datetime.datetime.now(tz=config_timezone)
+
+    if not (start_time.hour <= 8 and start_time.minute <= 30):
+        daily_task()
 
     while True:
         schedule.exec_jobs()
